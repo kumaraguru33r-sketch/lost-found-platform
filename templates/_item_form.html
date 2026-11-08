@@ -1,0 +1,39 @@
+<div class="container"><div class="row justify-content-center"><div class="col-lg-8">
+  <div class="card shadow-sm"><div class="card-body p-4">
+    <h3 class="mb-1">{{ 'Edit' if item else 'Report' }} {{ item_type|lower }} item</h3>
+    <p class="text-muted small">Keep the public description general. Put private, identifying details in the "additional information" box; they are only visible to you.</p>
+    <form method="post" enctype="multipart/form-data" action="{{ action }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label">Item name *</label>
+          <input name="item_name" class="form-control" required minlength="2" maxlength="100" value="{{ v.get('item_name','') }}"></div>
+        <div class="col-md-6"><label class="form-label">Category *</label>
+          <select name="category" class="form-select" required>
+            <option value="">Choose...</option>
+            {% for c in categories %}<option {{ 'selected' if v.get('category') == c }}>{{ c }}</option>{% endfor %}
+          </select></div>
+        <div class="col-12"><label class="form-label">Description *</label>
+          <textarea name="description" class="form-control" rows="3" required minlength="10" maxlength="2000">{{ v.get('description','') }}</textarea></div>
+        <div class="col-md-6"><label class="form-label">{{ item_type }} date *</label>
+          <input type="date" name="report_date" class="form-control" required max="{{ today }}" value="{{ v.get('report_date','') }}"></div>
+        <div class="col-md-6"><label class="form-label">{{ item_type }} location *</label>
+          <input name="location" class="form-control" required maxlength="150" value="{{ v.get('location','') }}"></div>
+        <div class="col-12"><label class="form-label">Item image (PNG, JPG, GIF, WEBP, max 5 MB)</label>
+          <input type="file" name="image" id="imageInput" class="form-control" accept=".png,.jpg,.jpeg,.gif,.webp">
+          <img id="imagePreview" class="img-preview mt-2 {{ '' if item and item.image else 'd-none' }}"
+               src="{{ url_for('static', filename='uploads/' ~ item.image) if item and item.image else '' }}" alt="Preview"></div>
+        <div class="col-12"><label class="form-label">Additional {{ 'identifying ' if item_type == 'Lost' else '' }}information <span class="text-muted">(private)</span></label>
+          <textarea name="additional_info" class="form-control" rows="2" maxlength="1000"
+            placeholder="{{ 'Serial number, scratches, wallpaper, contents...' if item_type == 'Lost' else 'Something only the true owner would know: contents, marks, serial number...' }}">{{ v.get('additional_info','') }}</textarea></div>
+        <div class="col-12"><label class="form-label">Contact preference</label>
+          <select name="contact_preference" class="form-select">
+            {% for k, label in contact_prefs.items() %}<option value="{{ k }}" {{ 'selected' if v.get('contact_preference') == k }}>{{ label }}</option>{% endfor %}
+          </select></div>
+      </div>
+      <div class="mt-4 d-flex gap-2">
+        <button class="btn btn-primary">{{ 'Save changes' if item else 'Submit report' }}</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </form>
+  </div></div>
+</div></div></div>

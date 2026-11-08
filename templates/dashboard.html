@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import item_card %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+    <h2 class="mb-0">Lost &amp; Found Dashboard</h2>
+    <div>
+      <a href="{{ url_for('report_lost') }}" class="btn btn-danger btn-sm">+ Lost</a>
+      <a href="{{ url_for('report_found') }}" class="btn btn-success btn-sm">+ Found</a>
+    </div>
+  </div>
+
+  <ul class="nav nav-pills mb-3">
+    {% for key, label in [('all','All'),('lost','Lost'),('found','Found'),('mine','My reports')] %}
+    <li class="nav-item"><a class="nav-link {{ 'active' if tab == key }}" href="{{ url_for('dashboard', tab=key) }}">{{ label }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <form class="card card-body mb-4" method="get">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <div class="row g-2">
+      <div class="col-12 col-md-4"><input name="q" class="form-control" placeholder="Search by item name" value="{{ f.get('q','') }}"></div>
+      <div class="col-6 col-md-2">
+        <select name="category" class="form-select">
+          <option value="">All categories</option>
+          {% for c in categories %}<option {{ 'selected' if f.get('category') == c }}>{{ c }}</option>{% endfor %}
+        </select></div>
+      <div class="col-6 col-md-2"><input name="location" class="form-control" placeholder="Location" value="{{ f.get('location','') }}"></div>
+      <div class="col-6 col-md-2">
+        <select name="status" class="form-select">
+          <option value="">Any status</option>
+          <option {{ 'selected' if f.get('status') == 'Open' }}>Open</option>
+          <option {{ 'selected' if f.get('status') == 'Returned' }}>Returned</option>
+        </select></div>
+      <div class="col-6 col-md-2 d-grid"><button class="btn btn-primary">Filter</button></div>
+      <div class="col-6 col-md-3"><label class="form-label small mb-0">From date</label>
+        <input type="date" name="date_from" class="form-control" value="{{ f.get('date_from','') }}"></div>
+      <div class="col-6 col-md-3"><label class="form-label small mb-0">To date</label>
+        <input type="date" name="date_to" class="form-control" value="{{ f.get('date_to','') }}"></div>
+      <div class="col-12 col-md-2 align-self-end"><a href="{{ url_for('dashboard', tab=tab) }}" class="btn btn-outline-secondary w-100">Reset</a></div>
+    </div>
+  </form>
+
+  <div class="row g-4">
+    {% for item in pagination.items %}
+    <div class="col-12 col-sm-6 col-lg-4">
+      {{ item_card(item) }}
+      {% if tab == 'mine' %}
+      <div class="d-flex gap-2 mt-2">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('edit_item', item_id=item.id) }}">Edit</a>
+        <form method="post" action="{{ url_for('delete_item', item_id=item.id) }}" data-confirm="Delete this report permanently?">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-sm btn-outline-danger">Delete</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="col-12 text-center text-muted py-5"><i class="bi bi-inbox display-4"></i><p class="mt-2">No items match your search.</p></div>
+    {% endfor %}
+  </div>
+
+  {% if pagination.pages > 1 %}
+  <nav class="mt-4"><ul class="pagination justify-content-center">
+    {% for p in pagination.iter_pages() %}
+      {% if p %}<li class="page-item {{ 'active' if p == pagination.page }}"><a class="page-link" href="{{ url_for('dashboard', page=p, **qargs) }}">{{ p }}</a></li>
+      {% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}
+    {% endfor %}
+  </ul></nav>
+  {% endif %}
+</div>
+{% endblock %}

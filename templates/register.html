@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign up{% endblock %}
+{% block content %}
+<div class="container"><div class="row justify-content-center"><div class="col-md-6 col-lg-5">
+  <div class="card shadow-sm"><div class="card-body p-4">
+    <h3 class="mb-3">Create your account</h3>
+    <form method="post" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-3"><label class="form-label">Username</label>
+        <input name="username" class="form-control" required minlength="3" maxlength="30" pattern="[A-Za-z0-9_.\-]+" value="{{ form.get('username','') }}"></div>
+      <div class="mb-3"><label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" required value="{{ form.get('email','') }}"></div>
+      <div class="mb-3"><label class="form-label">Phone <span class="text-muted">(optional, never shown publicly)</span></label>
+        <input name="phone" class="form-control" value="{{ form.get('phone','') }}"></div>
+      <div class="mb-3"><label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" required minlength="8">
+        <div class="form-text">At least 8 characters, with a letter and a number.</div></div>
+      <div class="mb-3"><label class="form-label">Confirm password</label>
+        <input type="password" name="confirm" class="form-control" required></div>
+      <button class="btn btn-primary w-100">Sign up</button>
+    </form>
+    <p class="text-center small mt-3 mb-0">Already registered? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div></div>
+</div></div></div>
+{% endblock %}

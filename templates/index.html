@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_macros.html" import item_card %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<section class="hero text-center text-white py-5">
+  <div class="container py-4">
+    <h1 class="display-5 fw-bold">Lost Something? Let's Find It Together.</h1>
+    <p class="lead mx-auto hero-text">Report what you've lost, post what you've found, and let our community help reconnect belongings with their rightful owners safely.</p>
+    <form class="row g-2 justify-content-center my-4" action="{{ url_for('dashboard') }}" method="get">
+      <div class="col-12 col-md-6">
+        <input type="search" name="q" class="form-control form-control-lg" placeholder="Search lost &amp; found items by name...">
+      </div>
+      <div class="col-12 col-md-auto">
+        <button class="btn btn-light btn-lg w-100"><i class="bi bi-search"></i> Search</button>
+      </div>
+    </form>
+    <a href="{{ url_for('report_lost') }}" class="btn btn-danger btn-lg me-2 mb-2"><i class="bi bi-exclamation-circle"></i> Report Lost Item</a>
+    <a href="{{ url_for('report_found') }}" class="btn btn-success btn-lg mb-2"><i class="bi bi-check-circle"></i> Report Found Item</a>
+  </div>
+</section>
+
+<div class="container">
+  <section class="my-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="section-title mb-0">Recently reported lost items</h3>
+      <a href="{{ url_for('dashboard', tab='lost') }}">View all</a>
+    </div>
+    <div class="row g-4">
+      {% for item in lost_items %}<div class="col-12 col-sm-6 col-lg-4">{{ item_card(item) }}</div>
+      {% else %}<p class="text-muted">No lost items reported yet.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="my-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3 class="section-title mb-0">Recently reported found items</h3>
+      <a href="{{ url_for('dashboard', tab='found') }}">View all</a>
+    </div>
+    <div class="row g-4">
+      {% for item in found_items %}<div class="col-12 col-sm-6 col-lg-4">{{ item_card(item) }}</div>
+      {% else %}<p class="text-muted">No found items reported yet.</p>{% endfor %}
+    </div>
+  </section>
+
+  <section class="my-5">
+    <h3 class="section-title text-center mb-4">How it works</h3>
+    <div class="row g-4 text-center">
+      <div class="col-md-3"><div class="step"><i class="bi bi-pencil-square"></i><h5>1. Report</h5><p class="small text-muted">Post a lost or found item with details and a photo.</p></div></div>
+      <div class="col-md-3"><div class="step"><i class="bi bi-lightning-charge"></i><h5>2. Get matches</h5><p class="small text-muted">We suggest possible matches with a score. You decide.</p></div></div>
+      <div class="col-md-3"><div class="step"><i class="bi bi-shield-check"></i><h5>3. Verify</h5><p class="small text-muted">Claimants describe private details only the owner would know.</p></div></div>
+      <div class="col-md-3"><div class="step"><i class="bi bi-box2-heart"></i><h5>4. Reunite</h5><p class="small text-muted">Approve the claim and arrange the return safely.</p></div></div>
+    </div>
+  </section>
+
+  <section class="my-5">
+    <div class="row g-3 text-center stats-row">
+      <div class="col-6 col-md-3"><div class="stat"><span>{{ stats.users }}</span>Community members</div></div>
+      <div class="col-6 col-md-3"><div class="stat"><span>{{ stats.lost }}</span>Lost reports</div></div>
+      <div class="col-6 col-md-3"><div class="stat"><span>{{ stats.found }}</span>Found reports</div></div>
+      <div class="col-6 col-md-3"><div class="stat"><span>{{ stats.returned }}</span>Items returned</div></div>
+    </div>
+  </section>
+</div>
+{% endblock %}

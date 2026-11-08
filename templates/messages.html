@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<div class="container">
+  <h2 class="mb-3">Private messages</h2>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="list-group shadow-sm">
+        {% for t in threads %}
+        <a class="list-group-item list-group-item-action {{ 'active' if active and active.item.id == t.item.id and active.other.id == t.other.id }}"
+           href="{{ url_for('messages', item=t.item.id, user=t.other.id) }}">
+          <div class="d-flex justify-content-between">
+            <strong>{{ t.other.username }}</strong>
+            {% if t.unread %}<span class="badge bg-danger">{{ t.unread }}</span>{% endif %}
+          </div>
+          <small>{{ t.item.item_name }}</small><br>
+          <small class="opacity-75">{{ t.last.message[:50] }}{{ '…' if t.last.message|length > 50 }}</small>
+        </a>
+        {% else %}
+        <div class="list-group-item text-muted">No conversations yet. Open an item and send the reporter a message.</div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="col-md-8">
+      {% if active %}
+      <div class="card shadow-sm">
+        <div class="card-header bg-white">
+          <strong>{{ active.other.username }}</strong> about
+          <a href="{{ url_for('item_details', item_id=active.item.id) }}">{{ active.item.item_name }}</a>
+        </div>
+        <div class="card-body chat-box" id="chatBox">
+          {% for m in convo %}
+          <div class="chat-msg {{ 'mine' if m.sender_id == current_user.id else 'theirs' }}">
+            <div class="bubble">{{ m.message }}</div>
+            <small class="text-muted">{{ m.created_at.strftime('%d %b, %H:%M') }}</small>
+          </div>
+          {% else %}<p class="text-muted text-center">Say hello. Your phone number stays private.</p>{% endfor %}
+        </div>
+        <div class="card-footer bg-white">
+          <form method="post" action="{{ url_for('send_message') }}" class="d-flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="item_id" value="{{ active.item.id }}">
+            <input type="hidden" name="receiver_id" value="{{ active.other.id }}">
+            <input name="message" class="form-control" required maxlength="1000" placeholder="Type a message...">
+            <button class="btn btn-primary"><i class="bi bi-send"></i></button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="card card-body text-center text-muted"><i class="bi bi-chat-dots display-4"></i><p class="mt-2 mb-0">Select a conversation.</p></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

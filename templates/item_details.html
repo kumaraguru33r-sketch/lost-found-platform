@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ item.item_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <a href="{{ url_for('dashboard') }}" class="small">&larr; Back to browse</a>
+  <div class="row g-4 mt-1">
+    <div class="col-lg-7">
+      <div class="card shadow-sm">
+        {% if item.image %}<img src="{{ url_for('static', filename='uploads/' ~ item.image) }}" class="detail-img" alt="{{ item.item_name }}">{% endif %}
+        <div class="card-body p-4">
+          <div class="mb-2">
+            <span class="badge {{ 'bg-danger' if item.item_type == 'Lost' else 'bg-success' }}">{{ item.item_type }}</span>
+            <span class="badge {{ 'bg-secondary' if item.status == 'Open' else 'bg-primary' }}">{{ item.status }}</span>
+            {% if item.flagged and current_user.is_authenticated and current_user.is_admin %}<span class="badge bg-warning text-dark">Flagged</span>{% endif %}
+          </div>
+          <h2>{{ item.item_name }}</h2>
+          <p class="text-muted mb-2"><i class="bi bi-tag"></i> {{ item.category }} &nbsp; <i class="bi bi-geo-alt"></i> {{ item.location }} &nbsp; <i class="bi bi-calendar3"></i> {{ item.report_date.strftime('%d %b %Y') }}</p>
+          <p style="white-space: pre-line">{{ item.description }}</p>
+          <p class="small text-muted">Reported by <strong>{{ item.owner.username }}</strong> on {{ item.created_at.strftime('%d %b %Y') }}</p>
+
+          {% if private and item.additional_info %}
+          <div class="alert alert-secondary"><strong><i class="bi bi-lock"></i> Private details (only the reporter and admins can see this)</strong>
+            <p class="mb-0" style="white-space: pre-line">{{ item.additional_info }}</p></div>
+          {% endif %}
+
+          {% if private %}
+          <div class="d-flex gap-2 mt-3">
+            {% if is_owner %}<a class="btn btn-outline-primary" href="{{ url_for('edit_item', item_id=item.id) }}"><i class="bi bi-pencil"></i> Edit</a>{% endif %}
+            <form method="post" action="{{ url_for('delete_item', item_id=item.id) }}" data-confirm="Delete this listing permanently?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+            </form>
+          </div>
+          {% elif current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('flag_item', item_id=item.id) }}" class="mt-3" data-confirm="Report this listing as inappropriate?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-link btn-sm text-muted p-0"><i class="bi bi-flag"></i> Report this listing</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-5">
+      {% if not current_user.is_authenticated %}
+      <div class="card shadow-sm"><div class="card-body text-center">
+        <i class="bi bi-lock display-6 text-primary"></i>
+        <p class="mt-2">Log in to message the reporter or claim this item.</p>
+        <a class="btn btn-primary" href="{{ url_for('login', next=request.path) }}">Log in</a>
+      </div></div>
+
+      {% elif not is_owner %}
+        {% if my_claim and my_claim.status == 'Approved' %}
+        <div class="alert alert-success"><strong>Your claim was approved!</strong>
+          {% if approved_contact %}<br>{{ approved_contact }}{% else %}<br>Use messages to arrange the return.{% endif %}</div>
+        {% elif my_claim and my_claim.status == 'Pending' %}
+        <div class="alert alert-info">Your claim is waiting for the reporter's review.</div>
+        {% elif my_claim and my_claim.status == 'Rejected' %}
+        <div class="alert alert-warning">Your previous claim was not approved.</div>
+        {% endif %}
+
+        {% if item.status == 'Open' and not (my_claim and my_claim.status == 'Pending') and not current_user.is_admin %}
+        <div class="card shadow-sm mb-3"><div class="card-body">
+          <h5>Claim this item</h5>
+          <p class="small text-muted">Describe details only the real owner would know (marks, contents, serial number). This is never shown publicly.</p>
+          <form method="post" action="{{ url_for('submit_claim', item_id=item.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="claim_details" class="form-control mb-2" rows="4" required minlength="20" maxlength="2000"></textarea>
+            <button class="btn btn-success w-100">Submit claim</button>
+          </form>
+        </div></div>
+        {% endif %}
+
+        <div class="card shadow-sm"><div class="card-body">
+          <h5>Message the reporter</h5>
+          <form method="post" action="{{ url_for('send_message') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <input type="hidden" name="receiver_id" value="{{ item.user_id }}">
+            <textarea name="message" class="form-control mb-2" rows="3" required maxlength="1000" placeholder="Your phone number stays private."></textarea>
+            <button class="btn btn-primary w-100">Send message</button>
+          </form>
+        </div></div>
+      {% endif %}
+
+      {% if is_owner %}
+        {% if matches %}
+        <div class="card shadow-sm mb-3"><div class="card-body">
+          <h5>Possible matches</h5>
+          <p class="small text-muted">Suggestions only. Please verify ownership before returning anything.</p>
+          {% for m in matches %}
+          <a href="{{ url_for('item_details', item_id=m.item.id) }}" class="match-row">
+            <div class="d-flex justify-content-between"><strong>{{ m.item.item_name }}</strong><span class="badge bg-primary">{{ m.score }}%</span></div>
+            <div class="progress my-1" style="height:6px"><div class="progress-bar" style="width: {{ m.score }}%"></div></div>
+            <small class="text-muted">{{ m.reasons|join(' · ') }}</small>
+          </a>
+          {% endfor %}
+        </div></div>
+        {% elif item.status == 'Open' %}
+        <div class="alert alert-light border">No likely matches yet. Check back as new reports arrive.</div>
+        {% endif %}
+      {% endif %}
+
+      {% if private and claims %}
+      <div class="card shadow-sm"><div class="card-body">
+        <h5>Claims ({{ claims|length }})</h5>
+        {% for c in claims %}
+        <div class="claim-box">
+          <div class="d-flex justify-content-between">
+            <strong>{{ c.claimant.username }}</strong>
+            <span class="badge {{ {'Pending':'bg-warning text-dark','Approved':'bg-success','Rejected':'bg-secondary'}[c.status] }}">{{ c.status }}</span>
+          </div>
+          <p class="small my-2" style="white-space: pre-line">{{ c.claim_details }}</p>
+          <div class="d-flex gap-2 flex-wrap">
+            {% if is_owner and c.status == 'Pending' %}
+            <form method="post" action="{{ url_for('review_claim', claim_id=c.id, action='approve') }}" data-confirm="Approve this claim and mark the item returned?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-success">Approve</button></form>
+            <form method="post" action="{{ url_for('review_claim', claim_id=c.id, action='reject') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Reject</button></form>
+            {% endif %}
+            {% if is_owner %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('messages', item=item.id, user=c.claimant_id) }}">Message</a>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

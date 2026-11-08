@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+{% macro item_table(rows, show_unflag=False) %}
+<div class="table-responsive"><table class="table table-hover align-middle bg-white">
+  <thead><tr><th>Item</th><th>Type</th><th>By</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for i in rows %}
+  <tr>
+    <td><a href="{{ url_for('item_details', item_id=i.id) }}">{{ i.item_name }}</a>{% if i.flagged %} <span class="badge bg-warning text-dark">Flagged</span>{% endif %}</td>
+    <td>{{ i.item_type }}</td><td>{{ i.owner.username }}</td><td>{{ i.status }}</td>
+    <td class="text-end">
+      {% if show_unflag %}
+      <form method="post" action="{{ url_for('admin_unflag', item_id=i.id) }}" class="d-inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-success">Keep</button></form>
+      {% endif %}
+      <form method="post" action="{{ url_for('delete_item', item_id=i.id) }}" class="d-inline" data-confirm="Remove this listing?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ url_for('admin') }}">
+        <button class="btn btn-sm btn-outline-danger">Remove</button></form>
+    </td>
+  </tr>
+  {% else %}<tr><td colspan="5" class="text-muted text-center">Nothing here.</td></tr>{% endfor %}
+  </tbody></table></div>
+{% endmacro %}
+<div class="container">
+  <h2 class="mb-3">Admin dashboard</h2>
+  <div class="row g-3 mb-4 text-center stats-row">
+    <div class="col-6 col-md"><div class="stat"><span>{{ stats.users }}</span>Users</div></div>
+    <div class="col-6 col-md"><div class="stat"><span>{{ stats.lost }}</span>Lost</div></div>
+    <div class="col-6 col-md"><div class="stat"><span>{{ stats.found }}</span>Found</div></div>
+    <div class="col-6 col-md"><div class="stat"><span>{{ stats.returned }}</span>Returned</div></div>
+    <div class="col-12 col-md"><div class="stat"><span>{{ stats.flagged }}</span>Flagged</div></div>
+  </div>
+
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-flagged">Flagged ({{ flagged|length }})</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-items">All listings</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-users">Users</button></li>
+    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-cats">Categories</button></li>
+  </ul>
+
+  <div class="tab-content">
+    <div class="tab-pane fade show active" id="t-flagged">{{ item_table(flagged, True) }}</div>
+    <div class="tab-pane fade" id="t-items">{{ item_table(items) }}</div>
+
+    <div class="tab-pane fade" id="t-users">
+      <div class="table-responsive"><table class="table table-hover align-middle bg-white">
+        <thead><tr><th>User</th><th>Email</th><th>Joined</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for u in users %}
+        <tr>
+          <td>{{ u.username }}{% if u.is_admin %} <span class="badge bg-primary">admin</span>{% endif %}</td>
+          <td>{{ u.email }}</td><td>{{ u.created_at.strftime('%d %b %Y') }}</td>
+          <td>{{ 'Active' if u.active else 'Deactivated' }}</td>
+          <td class="text-end">
+            {% if u.id != current_user.id and not u.is_admin %}
+            <form method="post" action="{{ url_for('admin_toggle_user', user_id=u.id) }}" class="d-inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn btn-sm btn-outline-warning">{{ 'Deactivate' if u.active else 'Activate' }}</button></form>
+            <form method="post" action="{{ url_for('admin_delete_user', user_id=u.id) }}" class="d-inline" data-confirm="Delete this user and all their data?">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody></table></div>
+    </div>
+
+    <div class="tab-pane fade" id="t-cats">
+      <form method="post" action="{{ url_for('admin_add_category') }}" class="row g-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="col-8 col-md-4"><input name="name" class="form-control" placeholder="New category" required maxlength="50"></div>
+        <div class="col-4 col-md-2"><button class="btn btn-primary w-100">Add</button></div>
+      </form>
+      <ul class="list-group">
+        {% for c in cats %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">{{ c.name }}
+          <form method="post" action="{{ url_for('admin_delete_category', cat_id=c.id) }}" data-confirm="Delete this category?">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-sm btn-outline-danger">Delete</button></form>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

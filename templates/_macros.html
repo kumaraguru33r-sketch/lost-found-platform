@@ -1,0 +1,20 @@
+{% macro item_card(item) %}
+<div class="card item-card h-100">
+  {% if item.image %}
+  <img src="{{ url_for('static', filename='uploads/' ~ item.image) }}" class="card-img-top" alt="{{ item.item_name }}">
+  {% else %}
+  <div class="card-img-top placeholder-img"><i class="bi bi-image"></i></div>
+  {% endif %}
+  <div class="card-body">
+    <div class="d-flex justify-content-between mb-2">
+      <span class="badge {{ 'bg-danger' if item.item_type == 'Lost' else 'bg-success' }}">{{ item.item_type }}</span>
+      <span class="badge {{ 'bg-secondary' if item.status == 'Open' else 'bg-primary' }}">{{ item.status }}</span>
+    </div>
+    <h5 class="card-title mb-1">{{ item.item_name }}</h5>
+    <p class="small text-muted mb-1"><i class="bi bi-tag"></i> {{ item.category }}</p>
+    <p class="small text-muted mb-1"><i class="bi bi-geo-alt"></i> {{ item.location }}</p>
+    <p class="small text-muted mb-0"><i class="bi bi-calendar3"></i> {{ item.report_date.strftime('%d %b %Y') }}</p>
+  </div>
+  <a href="{{ url_for('item_details', item_id=item.id) }}" class="stretched-link" aria-label="View {{ item.item_name }}"></a>
+</div>
+{% endmacro %}
