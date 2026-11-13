@@ -1525,63 +1525,46 @@ for code in MESSAGES:
     )
 
 
+
 # ---------------------------------------------------------
 # DATABASE INITIALIZATION
 # ---------------------------------------------------------
 
-
-with app.app_context():
-    db.create_all()
-    seed()
-
-
-if __name__ == "__main__":
-    app.run(
-        debug=os.environ.get("FLASK_DEBUG") == "1"
-    )
-    if not User.query.filter_by(
-        is_admin=True
-    ).first():
-
-        pw = (
-            os.environ.get("ADMIN_PASSWORD")
-            or secrets.token_urlsafe(10)
-        )
-
-        admin_user = User(
-            username="admin",
-            email="admin@lostfound.local",
-            is_admin=True
-        )
-
-        admin_user.set_password(pw)
-
-        db.session.add(admin_user)
-
 def seed():
+    """Create the initial admin account if it does not exist."""
+
     admin_user = User.query.filter_by(
         username="admin"
     ).first()
 
     admin_password = os.environ.get("ADMIN_PASSWORD")
 
-    if admin_user:
-        if admin_password:
-            admin_user.set_password(admin_password)
-            db.session.commit()
-            print("Admin password updated successfully.")
+    if admin_user is None and admin_password:
+        admin_user = User(
+            username="admin",
+            email="admin@lostfound.local",
+            is_admin=True
+        )
 
-    else:
-        if admin_password:
-            admin_user = User(
-                username="admin",
-                email="admin@lostfound.local",
-                is_admin=True
-            )
-            admin_user.set_password(admin_password)
+        admin_user.set_password(admin_password)
 
-            db.session.add(admin_user)
-            db.session.commit()
-            print("Admin account created successfully.")
+        db.session.add(admin_user)
+        db.session.commit()
 
-    db.session.commit()
+        print("Initial admin account created.")
+
+
+# Initialize database tables and seed initial admin
+with app.app_context():
+    db.create_all()
+    seed()
+
+
+# ---------------------------------------------------------
+# RUN APPLICATION
+# ---------------------------------------------------------
+
+if __name__ == "__main__":
+    app.run(
+        debug=os.environ.get("FLASK_DEBUG") == "1"
+    )
