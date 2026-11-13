@@ -1530,16 +1530,15 @@ for code in MESSAGES:
 # ---------------------------------------------------------
 
 
-
+with app.app_context():
     db.create_all()
+    seed()
 
-    if Category.query.count() == 0:
 
-        db.session.add_all(
-            Category(name=name)
-            for name in app.config["DEFAULT_CATEGORIES"]
-        )
-
+if __name__ == "__main__":
+    app.run(
+        debug=os.environ.get("FLASK_DEBUG") == "1"
+    )
     if not User.query.filter_by(
         is_admin=True
     ).first():
