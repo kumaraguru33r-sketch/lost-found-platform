@@ -224,7 +224,15 @@ def login():
         ident = request.form.get("identifier", "").strip()
         user = User.query.filter(or_(func.lower(User.username) == ident.lower(),
                                      User.email == ident.lower())).first()
-        if user and user.check_password(request.form.get("password", "")):
+        
+        password = request.form.get("password", "")
+
+        print("USER FOUND:", user is not None)
+        print("ACCOUNT ACTIVE:", user.active if user else None)
+        print("PASSWORD MATCH:", user.check_password(password) if user else None)
+
+        if user and user.check_password(password):
+
             if not user.active:
                 flash("This account has been deactivated.", "danger")
                 return render_template("login.html")
