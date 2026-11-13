@@ -1529,7 +1529,7 @@ for code in MESSAGES:
 # DATABASE INITIALIZATION
 # ---------------------------------------------------------
 
-def seed():
+
 
     db.create_all()
 
@@ -1559,21 +1559,30 @@ def seed():
 
         db.session.add(admin_user)
 
-        # Do not print admin passwords in production logs.
+def seed():
+    admin_user = User.query.filter_by(
+        username="admin"
+    ).first()
+
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+
+    if admin_user:
+        if admin_password:
+            admin_user.set_password(admin_password)
+            db.session.commit()
+            print("Admin password updated successfully.")
+
+    else:
+        if admin_password:
+            admin_user = User(
+                username="admin",
+                email="admin@lostfound.local",
+                is_admin=True
+            )
+            admin_user.set_password(admin_password)
+
+            db.session.add(admin_user)
+            db.session.commit()
+            print("Admin account created successfully.")
 
     db.session.commit()
-
-
-with app.app_context():
-    seed()
-
-
-# ---------------------------------------------------------
-# RUN APPLICATION
-# ---------------------------------------------------------
-
-if __name__ == "__main__":
-
-    app.run(
-        debug=os.environ.get("FLASK_DEBUG") == "1"
-    )
